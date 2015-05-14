@@ -1,0 +1,51 @@
+member(X, [X | _ ]).
+member(X, [ _ | Y]) :- member(X, Y).
+
+empty([]).
+
+select(Element,[Element|Tail],Tail).
+select(Element,[Head|Tail],[Head|TaiE]):-
+    select(Element,Tail,TaiE).
+
+append([],L,L).
+append([H|T],L2,[H|L3])  :-  append(T,L2,L3).
+
+reverse([],[]).
+reverse([H|T1], R) :-
+    reverse(T1, T2),
+    append(T2, [H], R).
+
+merge([],[]).
+merge([H|T], S) :-
+    merge(T,Temp),
+    append(H,Temp,S).
+
+goal(S) :- empty(S).
+
+move(Paths, Node, NextNode) :-
+     merge(Paths, Visited),
+     connect(Node, NextNode),
+     \+ member(NextNode, Visited).
+
+expandPath([[Node|Path]|Paths], ExpPaths) :-
+     findall([NewNode, Node|Path], move([Path|Paths],Node,NewNode), ExpPaths).
+
+solve(Full) :-
+     start(Node),
+     findall(X,food(X),Foods),
+     bfs([[Node]], Path, Foods, Full),!.
+
+bfs([Path|_], P,Foods, Path) :-
+     goal(Foods).
+
+bfs([[Node|Path]|_], P, [Node|RestFoods], Full) :-
+     %member(Node, Foods),
+     %select(Node, Foods, RestFoods),
+     reverse(Path, Rev),
+     append(Rev, Next, Full),
+     bfs([[Node]], NewPath, RestFoods, Next).
+
+bfs([Path|Paths], SolutionPath, Foods, Full) :-
+     expandPath([Path|Paths], ExpPaths),
+     append(Paths, ExpPaths, NewPaths),
+     bfs(NewPaths, SolutionPath, Foods, Full).

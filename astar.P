@@ -1,0 +1,59 @@
+goal(S) :- food(S).
+
+member(X, [X | _ ]).
+member(X, [ _ | Y]) :- member(X, Y).
+
+append([],L,L).
+append([H|T],L2,[H|L3])  :-  append(T,L2,L3).
+
+select(Element,[Element|Tail],Tail).
+select(Element,[Head|Tail],[Head|TaiE]):-
+    select(Element,Tail,TaiE).
+
+reverse([],[]).
+reverse([H|T1], R) :-
+    reverse(T1, T2),
+    append(T2, [H], R).
+
+merge([],[]).
+merge([H/_/_|T], S) :-
+    merge(T,Temp),
+    append(H,Temp,S).
+
+pickBestCandidate([Path], Path) :- !.
+
+pickBestCandidate([Path1/Cost1/Est1,_/Cost2/Est2|Paths], BestPath) :-
+    Cost1 + Est1 =< Cost2 + Est2,
+    pickBestCandidate([Path1/Cost1/Est1|Paths], BestPath),!.
+
+pickBestCandidate([_|Paths], BestPath) :-
+    pickBestCandidate(Paths, BestPath).
+
+move([[Node|Path]/Cost/_|Paths], [NextNode,Node|Path]/NewCost/Est) :-
+    connect(Node, NextNode),
+    merge(Paths, Expanded),
+    \+ member(NextNode, Expanded),
+    NewCost is Cost + 1,
+    heuristic(NextNode, Est).
+
+expandPath([Path|Paths], ExpPaths) :-
+    findall(NewPath, move([Path|Paths],NewPath), ExpPaths).
+
+astar(Paths, Path) :-
+     pickBestCandidate(Paths, Path),
+     Path = [Node|_]/_/_,
+     goal(Node).
+
+astar(Paths, SolutionPath) :-
+     pickBestCandidate(Paths, BestPath),
+     select(BestPath, Paths, OtherPaths),
+     expandPath([BestPath|Paths], ExpPaths),
+     append(OtherPaths, ExpPaths, NewPaths),
+     astar(NewPaths, SolutionPath).
+
+solve(Path/Cost) :-
+    start(Node),
+    heuristic(Node, Estimate),
+    astar([[Node]/0/Estimate], RevPath/Cost/_),
+    reverse(RevPath, Path),!.
+

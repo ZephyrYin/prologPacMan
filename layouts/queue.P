@@ -1,0 +1,6 @@
+empty_queue([]).
+
+queue_head(S, Q1, [S|Q1]).
+
+queue_last_list(S, Q1, [Q1|S]).
+

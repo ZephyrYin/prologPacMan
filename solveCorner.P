@@ -1,0 +1,63 @@
+manDis(Node1, Node2, Distance) :-
+    Dis = abs(Node1 - Node2),
+    width(W),
+    Distance is floor(Dis/W) + Dis mod W.
+
+graph(F, T) :- connect(F, T), not F = start, not T = finish.
+graph(F, T) :- connect(T, F), not T = start, not F = finish.
+
+start(S) :- connect(start, S).
+goal(S) :- connect(S, finish).
+
+member(X, [X | _ ]).
+member(X, [ _ | Y]) :- member(X, Y).
+
+append([],L,L).
+append([H|T],L2,[H|L3])  :-  append(T,L2,L3).
+
+select(Element,[Element|Tail],Tail).
+select(Element,[Head|Tail],[Head|TaiE]):-
+    select(Element,Tail,TaiE).
+
+reverse([],[]).
+reverse([H|T1], R) :-
+    reverse(T1, T2),
+    append(T2, [H], R).
+
+get_best([Path], Path) :- !.
+get_best([Path1/Cost1/Est1,_/Cost2/Est2|Paths], BestPath) :-
+    Cost1 + Est1 =< Cost2 + Est2, !,
+    get_best([Path1/Cost1/Est1|Paths], BestPath).
+get_best([_|Paths], BestPath) :-
+    get_best(Paths, BestPath).
+
+
+move_astar([Node|Path]/Cost/_, [NextNode,Node|Path]/NewCost/Est) :-
+    graph(Node, NextNode),
+    \+ member(NextNode, Path),
+    NewCost is Cost + 1,
+    heuristic(NextNode, Est).
+
+expand_astar(Path, ExpPaths) :-
+    findall(NewPath, move_astar(Path,NewPath), ExpPaths).
+
+
+astar(Paths, Path) :-
+     get_best(Paths, Path),
+     Path = [Node|_]/_/_,
+     goal(Node).
+
+astar(Paths, SolutionPath) :-
+     get_best(Paths, BestPath),
+     select(BestPath, Paths, OtherPaths),
+     expand_astar(BestPath, ExpPaths),
+     append(OtherPaths, ExpPaths, NewPaths),
+     astar(NewPaths, SolutionPath).
+
+
+solve_astar(Path/Cost) :-
+    start(Node),
+    heuristic(Node, Estimate),
+    astar([[Node]/0/Estimate], RevPath/Cost/_),
+    reverse(RevPath, Path),!.
+

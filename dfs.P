@@ -1,0 +1,23 @@
+member(X, [X | _ ]).
+member(X, [ _ | Y]) :- member(X, Y).
+
+goal(S) :- food(S).
+
+append([],L,L).
+append([H|T],L2,[H|L3])  :-  append(T,L2,L3).
+
+reverse([],[]).
+reverse([H|T1], R) :-
+    reverse(T1, T2),
+    append(T2, [H], R).
+
+solve(RevPath) :- start(S),
+    dfs(S,[S],Path),
+    reverse(Path, RevPath),!.    % cur with only one solution
+
+dfs(S,Path,Path) :- goal(S).
+
+dfs(S,TempPath,Path) :-
+    connect(S,S2),
+    \+(member(S2,TempPath)),            % check loop
+    dfs(S2,[S2|TempPath], Path).
